@@ -8,6 +8,8 @@ logs
 *.output
 *.data
 *.sw[ap]
+*.yml
+tags
 
 dump.data
 runtime.trace
@@ -19,3 +21,5 @@ data
 .cache/
 diagnostic/
 *.pid
+src/vendor/
+!vendor.json
