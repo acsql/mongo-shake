@@ -3,6 +3,7 @@ package executor
 import(
 	"fmt"
 	"strings"
+	"time"
 
 	"mongoshake/common"
 	"mongoshake/collector/configure"
@@ -15,6 +16,7 @@ import(
 
 const (
 	verisonMark = "$v"
+	idcXXX      = "IDC_XXX"
 )
 
 type BasicWriter interface {
@@ -301,6 +303,14 @@ func (bw *BulkWriter) doUpdate(database, collection string, metadata bson.M,
 		if _, ok := oFiled[verisonMark]; ok {
 			delete(oFiled, verisonMark)
 		}
+		var oSet bson.M
+		var idc int64 = time.Now().UnixNano() - 1543939200000000000
+		oSet, exists := oFiled["$set"].(bson.M)
+		if exists {
+			oSet[idcXXX] = idc
+		} else {
+			oFiled[idcXXX] = idc
+		}
 		update = append(update, log.original.partialLog.Query, oFiled)
 	}
 
@@ -481,12 +491,20 @@ func (sw *SingleWriter) doUpdate(database, collection string, metadata bson.M,
 		oplogs []*OplogRecord, upsert bool) error {
 	collectionHandle := sw.session.DB(database).C(collection)
 	var errMsgs []string
+	var idc int64 = time.Now().UnixNano() - 1543939200000000000
 	if upsert {
 		for _, log := range oplogs {
 			oFiled := log.original.partialLog.Object
 			// we should handle the special case: "o" filed may include "$v" in mongo-3.6 which is not support in mgo.v2 library
 			if _, ok := oFiled[verisonMark]; ok {
 				delete(oFiled, verisonMark)
+			}
+			var oSet bson.M
+			oSet, exists := oFiled["$set"].(bson.M)
+			if exists {
+				oSet[idcXXX] = idc
+			} else {
+				oFiled[idcXXX] = idc
 			}
 			_, err := collectionHandle.Upsert(log.original.partialLog.Query, oFiled)
 			if err != nil {
@@ -505,6 +523,13 @@ func (sw *SingleWriter) doUpdate(database, collection string, metadata bson.M,
 			// we should handle the special case: "o" filed may include "$v" in mongo-3.6 which is not support in mgo.v2 library
 			if _, ok := oFiled[verisonMark]; ok {
 				delete(oFiled, verisonMark)
+			}
+			var oSet bson.M
+			oSet, exists := oFiled["$set"].(bson.M)
+			if exists {
+				oSet[idcXXX] = idc
+			} else {
+				oFiled[idcXXX] = idc
 			}
 			err := collectionHandle.Update(log.original.partialLog.Query, oFiled)
 			if err != nil {
