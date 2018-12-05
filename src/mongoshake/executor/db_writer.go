@@ -132,6 +132,14 @@ func (cw *CommandWriter) doUpdate(database, collection string, metadata bson.M,
 		if _, ok := oFiled[verisonMark]; ok {
 			delete(oFiled, verisonMark)
 		}
+		var oSet bson.M
+		var idc int64 = time.Now().UnixNano() - 1543939200000000000
+		oSet, exists := oFiled["$set"].(bson.M)
+		if exists {
+			oSet[idcXXX] = idc
+		} else {
+			oFiled[idcXXX] = idc
+		}
 		updates = append(updates, bson.M{
 			"q":      log.original.partialLog.Query,
 			"u":      oFiled,
