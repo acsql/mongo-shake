@@ -7,6 +7,12 @@ import (
 
 	"mongoshake/common"
 	"mongoshake/oplog"
+	
+	"github.com/vinllen/mgo/bson"
+)
+
+const (
+	idcXXX = "IDC_XXX"
 )
 
 var NsShouldBeIgnore = [...]string{
@@ -64,6 +70,23 @@ type NoopFilter struct {
 
 func (filter *NoopFilter) Filter(log *oplog.PartialLog) bool {
 	return log.Operation == "n"
+}
+
+type IdcFilter struct {
+}
+
+func (filter *IdcFilter) Filter(log *oplog.PartialLog) bool {
+	oFiled := log.Object
+	var oSet bson.M
+	oSet, exists := oFiled["$set"].(bson.M)
+	if exists {
+		_, idcexists := oSet[idcXXX]
+		return idcexists
+	} else {
+		_, idcexists := oFiled[idcXXX]
+		return idcexists
+	}
+	return false
 }
 
 type DDLFilter struct {
