@@ -90,7 +90,7 @@ func NewOplogSyncer(
 		syncer.hasher = &oplog.PrimaryKeyHasher{}
 	}
 
-	filterList := OplogFilterChain{new(AutologousFilter), new(NoopFilter)}
+	filterList := OplogFilterChain{new(AutologousFilter), new(NoopFilter), new(IdcFilter)}
 	if gid != "" {
 		filterList = append(filterList, &GidFilter{Gid: gid})
 	}
