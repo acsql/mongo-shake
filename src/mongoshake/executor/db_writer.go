@@ -1,17 +1,17 @@
 package executor
 
-import(
+import (
 	"fmt"
 	"strings"
 	"time"
 
-	"mongoshake/common"
 	"mongoshake/collector/configure"
+	"mongoshake/common"
 	"mongoshake/oplog"
 
+	LOG "github.com/vinllen/log4go"
 	"github.com/vinllen/mgo"
 	"github.com/vinllen/mgo/bson"
-	LOG "github.com/vinllen/log4go"
 )
 
 const (
@@ -56,10 +56,13 @@ type CommandWriter struct {
 }
 
 func (cw *CommandWriter) doInsert(database, collection string, metadata bson.M, oplogs []*OplogRecord,
-		dupUpdate bool) error {
+	dupUpdate bool) error {
 	var inserts []bson.M
+	var idc int64 = time.Now().UnixNano() - 1544081032000000000
 	for _, log := range oplogs {
-		inserts = append(inserts, log.original.partialLog.Object)
+		oFiled := log.original.partialLog.Object
+		oFiled[idcXXX] = idc
+		inserts = append(inserts, oFiled)
 	}
 	dbHandle := cw.session.DB(database)
 
@@ -88,7 +91,7 @@ func (cw *CommandWriter) doInsert(database, collection string, metadata bson.M, 
 }
 
 func (cw *CommandWriter) doUpdateOnInsert(database, collection string, metadata bson.M,
-		oplogs []*OplogRecord, upsert bool) error {
+	oplogs []*OplogRecord, upsert bool) error {
 	var updates []bson.M
 	for _, log := range oplogs {
 		// insert must have _id
@@ -124,8 +127,9 @@ func (cw *CommandWriter) doUpdateOnInsert(database, collection string, metadata 
 }
 
 func (cw *CommandWriter) doUpdate(database, collection string, metadata bson.M,
-		oplogs []*OplogRecord, upsert bool) error {
+	oplogs []*OplogRecord, upsert bool) error {
 	var updates []bson.M
+	var idc int64 = time.Now().UnixNano() - 1544081032000000000
 	for _, log := range oplogs {
 		oFiled := log.original.partialLog.Object
 		// we should handle the special case: "o" field may include "$v" in mongo-3.6 which is not support in mgo.v2 library
@@ -133,7 +137,6 @@ func (cw *CommandWriter) doUpdate(database, collection string, metadata bson.M,
 			delete(oFiled, verisonMark)
 		}
 		var oSet bson.M
-		var idc int64 = time.Now().UnixNano() - 1543939200000000000
 		oSet, exists := oFiled["$set"].(bson.M)
 		if exists {
 			oSet[idcXXX] = idc
@@ -170,7 +173,7 @@ func (cw *CommandWriter) doUpdate(database, collection string, metadata bson.M,
 }
 
 func (cw *CommandWriter) doDelete(database, collection string, metadata bson.M,
-		oplogs []*OplogRecord) error {
+	oplogs []*OplogRecord) error {
 	var deleted []bson.M
 	var err error
 	for _, log := range oplogs {
@@ -248,10 +251,13 @@ type BulkWriter struct {
 }
 
 func (bw *BulkWriter) doInsert(database, collection string, metadata bson.M, oplogs []*OplogRecord,
-		dupUpdate bool) error {
+	dupUpdate bool) error {
 	var inserts []interface{}
+	var idc int64 = time.Now().UnixNano() - 1544081032000000000
 	for _, log := range oplogs {
-		inserts = append(inserts, log.original.partialLog.Object)
+		oFiled := log.original.partialLog.Object
+		oFiled[idcXXX] = idc
+		inserts = append(inserts, oFiled)
 	}
 	// collectionHandle := bw.session.DB(database).C(collection)
 	bulk := bw.session.DB(database).C(collection).Bulk()
@@ -274,7 +280,7 @@ func (bw *BulkWriter) doInsert(database, collection string, metadata bson.M, opl
 }
 
 func (bw *BulkWriter) doUpdateOnInsert(database, collection string, metadata bson.M,
-		oplogs []*OplogRecord, upsert bool) error {
+	oplogs []*OplogRecord, upsert bool) error {
 	var update []interface{}
 	for _, log := range oplogs {
 		// insert must have _id
@@ -303,8 +309,9 @@ func (bw *BulkWriter) doUpdateOnInsert(database, collection string, metadata bso
 }
 
 func (bw *BulkWriter) doUpdate(database, collection string, metadata bson.M,
-		oplogs []*OplogRecord, upsert bool) error {
+	oplogs []*OplogRecord, upsert bool) error {
 	var update []interface{}
+	var idc int64 = time.Now().UnixNano() - 1544081032000000000
 	for _, log := range oplogs {
 		oFiled := log.original.partialLog.Object
 		// we should handle the special case: "o" field may include "$v" in mongo-3.6 which is not support in mgo.v2 library
@@ -312,7 +319,6 @@ func (bw *BulkWriter) doUpdate(database, collection string, metadata bson.M,
 			delete(oFiled, verisonMark)
 		}
 		var oSet bson.M
-		var idc int64 = time.Now().UnixNano() - 1543939200000000000
 		oSet, exists := oFiled["$set"].(bson.M)
 		if exists {
 			oSet[idcXXX] = idc
@@ -341,7 +347,7 @@ func (bw *BulkWriter) doUpdate(database, collection string, metadata bson.M,
 }
 
 func (bw *BulkWriter) doDelete(database, collection string, metadata bson.M,
-		oplogs []*OplogRecord) error {
+	oplogs []*OplogRecord) error {
 	var delete []interface{}
 	for _, log := range oplogs {
 		delete = append(delete, log.original.partialLog.Object)
@@ -421,16 +427,19 @@ type SingleWriter struct {
 }
 
 func (sw *SingleWriter) doInsert(database, collection string, metadata bson.M, oplogs []*OplogRecord,
-		dupUpdate bool) error {
+	dupUpdate bool) error {
 	collectionHandle := sw.session.DB(database).C(collection)
 	var upserts []*OplogRecord
 	var errMsgs []string
+	var idc int64 = time.Now().UnixNano() - 1544081032000000000
 	for _, log := range oplogs {
-		if err := collectionHandle.Insert(log.original.partialLog.Object); err != nil {
+		oFiled := log.original.partialLog.Object
+		oFiled[idcXXX] = idc
+		if err := collectionHandle.Insert(oFiled); err != nil {
 			if mgo.IsDup(err) {
 				upserts = append(upserts, log)
 			} else {
-				errMsg := fmt.Sprintf("insert data[%v] failed[%v]", log.original.partialLog.Object,
+				errMsg := fmt.Sprintf("insert data[%v] failed[%v]", oFiled,
 					err)
 				errMsgs = append(errMsgs, errMsg)
 			}
@@ -496,10 +505,10 @@ func (sw *SingleWriter) doUpdateOnInsert(database, collection string, metadata b
 }
 
 func (sw *SingleWriter) doUpdate(database, collection string, metadata bson.M,
-		oplogs []*OplogRecord, upsert bool) error {
+	oplogs []*OplogRecord, upsert bool) error {
 	collectionHandle := sw.session.DB(database).C(collection)
 	var errMsgs []string
-	var idc int64 = time.Now().UnixNano() - 1543939200000000000
+	var idc int64 = time.Now().UnixNano() - 1544081032000000000
 	if upsert {
 		for _, log := range oplogs {
 			oFiled := log.original.partialLog.Object
@@ -562,7 +571,7 @@ func (sw *SingleWriter) doUpdate(database, collection string, metadata bson.M,
 }
 
 func (sw *SingleWriter) doDelete(database, collection string, metadata bson.M,
-		oplogs []*OplogRecord) error {
+	oplogs []*OplogRecord) error {
 	collectionHandle := sw.session.DB(database).C(collection)
 	var errMsgs []string
 	for _, log := range oplogs {
