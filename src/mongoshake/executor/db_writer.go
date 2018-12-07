@@ -93,12 +93,15 @@ func (cw *CommandWriter) doInsert(database, collection string, metadata bson.M, 
 func (cw *CommandWriter) doUpdateOnInsert(database, collection string, metadata bson.M,
 	oplogs []*OplogRecord, upsert bool) error {
 	var updates []bson.M
+	var idc int64 = time.Now().UnixNano() - 1544081032000000000
 	for _, log := range oplogs {
 		// insert must have _id
 		if id, exist := log.original.partialLog.Object["_id"]; exist {
+			oFiled := log.original.partialLog.Object
+			oFiled[idcXXX] = idc
 			updates = append(updates, bson.M{
 				"q":      bson.M{"_id": id},
-				"u":      log.original.partialLog.Object,
+				"u":      oFiled,
 				"upsert": upsert,
 				"multi":  false,
 			})
@@ -282,11 +285,14 @@ func (bw *BulkWriter) doInsert(database, collection string, metadata bson.M, opl
 func (bw *BulkWriter) doUpdateOnInsert(database, collection string, metadata bson.M,
 	oplogs []*OplogRecord, upsert bool) error {
 	var update []interface{}
+	var idc int64 = time.Now().UnixNano() - 1544081032000000000
 	for _, log := range oplogs {
 		// insert must have _id
 		if id, exist := log.original.partialLog.Object["_id"]; exist {
+			oFiled := log.original.partialLog.Object
+			oFiled[idcXXX] = idc
 			// updates = append(updates, &pair{id: id, data: log.original.partialLog.Object})
-			update = append(update, bson.M{"_id": id}, log.original.partialLog.Object)
+			update = append(update, bson.M{"_id": id}, oFiled)
 		} else {
 			LOG.Warn("Insert on duplicated update _id look up failed. %v", log)
 		}
@@ -469,10 +475,13 @@ func (sw *SingleWriter) doUpdateOnInsert(database, collection string, metadata b
 		data interface{}
 	}
 	var updates []*pair
+	var idc int64 = time.Now().UnixNano() - 1544081032000000000
 	for _, log := range oplogs {
 		// insert must have _id
 		if id, exist := log.original.partialLog.Object["_id"]; exist {
-			updates = append(updates, &pair{id: id, data: log.original.partialLog.Object})
+			oFiled := log.original.partialLog.Object
+			oFiled[idcXXX] = idc
+			updates = append(updates, &pair{id: id, data: oFiled})
 		} else {
 			LOG.Warn("Insert on duplicated update _id look up failed. %v", log)
 		}
@@ -652,14 +661,17 @@ func (sw *SingleWriter) applyOps(database, operation string, log *oplog.PartialL
 }
 
 func HandleDuplicated(collection *mgo.Collection, records []*OplogRecord, op int8) {
+	var idc int64 = time.Now().UnixNano() - 1544081032000000000
 	for _, record := range records {
 		log := record.original.partialLog
 		switch conf.Options.ReplayerConflictWriteTo {
 		case DumpConflictToDB:
 			// general process : write record to specific database
 			session := collection.Database.Session
+			oFiled := log.Object
+			oFiled[idcXXX] = idc
 			// discard conflict again
-			session.DB(utils.APPConflictDatabase).C(collection.Name).Insert(log.Object)
+			session.DB(utils.APPConflictDatabase).C(collection.Name).Insert(oFiled)
 		case DumpConflictToSDK, NoDumpConflict:
 		}
 
