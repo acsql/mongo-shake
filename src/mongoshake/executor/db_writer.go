@@ -2,6 +2,7 @@ package executor
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -56,7 +57,7 @@ type CommandWriter struct {
 }
 
 //func setIdcTag(log bson.M, op string) {
-//	var idc int64 = time.Now().UnixNano() - 1544081032000000000
+//	var idc string = strconv.FormatInt(time.Now().UnixNano(), 16)
 //	switch op {
 //	case "i":
 //		log[idcExists] = idc
@@ -75,7 +76,7 @@ type CommandWriter struct {
 func (cw *CommandWriter) doInsert(database, collection string, metadata bson.M, oplogs []*OplogRecord,
 	dupUpdate bool) error {
 	var inserts []bson.M
-	var idc int64 = time.Now().UnixNano() - 1544081032000000000
+	var idc string = strconv.FormatInt(time.Now().UnixNano(), 16)
 	for _, log := range oplogs {
 		oFiled := log.original.partialLog.Object
 		oFiled[idcExists] = idc
@@ -110,7 +111,7 @@ func (cw *CommandWriter) doInsert(database, collection string, metadata bson.M, 
 func (cw *CommandWriter) doUpdateOnInsert(database, collection string, metadata bson.M,
 	oplogs []*OplogRecord, upsert bool) error {
 	var updates []bson.M
-	var idc int64 = time.Now().UnixNano() - 1544081032000000000
+	var idc string = strconv.FormatInt(time.Now().UnixNano(), 16)
 	for _, log := range oplogs {
 		// insert must have _id
 		if id, exist := log.original.partialLog.Object["_id"]; exist {
@@ -149,7 +150,7 @@ func (cw *CommandWriter) doUpdateOnInsert(database, collection string, metadata 
 func (cw *CommandWriter) doUpdate(database, collection string, metadata bson.M,
 	oplogs []*OplogRecord, upsert bool) error {
 	var updates []bson.M
-	var idc int64 = time.Now().UnixNano() - 1544081032000000000
+	var idc string = strconv.FormatInt(time.Now().UnixNano(), 16)
 	for _, log := range oplogs {
 		oFiled := log.original.partialLog.Object
 		// we should handle the special case: "o" field may include "$v" in mongo-3.6 which is not support in mgo.v2 library
@@ -273,7 +274,7 @@ type BulkWriter struct {
 func (bw *BulkWriter) doInsert(database, collection string, metadata bson.M, oplogs []*OplogRecord,
 	dupUpdate bool) error {
 	var inserts []interface{}
-	var idc int64 = time.Now().UnixNano() - 1544081032000000000
+	var idc string = strconv.FormatInt(time.Now().UnixNano(), 16)
 	for _, log := range oplogs {
 		oFiled := log.original.partialLog.Object
 		oFiled[idcExists] = idc
@@ -302,7 +303,7 @@ func (bw *BulkWriter) doInsert(database, collection string, metadata bson.M, opl
 func (bw *BulkWriter) doUpdateOnInsert(database, collection string, metadata bson.M,
 	oplogs []*OplogRecord, upsert bool) error {
 	var update []interface{}
-	var idc int64 = time.Now().UnixNano() - 1544081032000000000
+	var idc string = strconv.FormatInt(time.Now().UnixNano(), 16)
 	for _, log := range oplogs {
 		// insert must have _id
 		if id, exist := log.original.partialLog.Object["_id"]; exist {
@@ -334,7 +335,7 @@ func (bw *BulkWriter) doUpdateOnInsert(database, collection string, metadata bso
 func (bw *BulkWriter) doUpdate(database, collection string, metadata bson.M,
 	oplogs []*OplogRecord, upsert bool) error {
 	var update []interface{}
-	var idc int64 = time.Now().UnixNano() - 1544081032000000000
+	var idc string = strconv.FormatInt(time.Now().UnixNano(), 16)
 	for _, log := range oplogs {
 		oFiled := log.original.partialLog.Object
 		// we should handle the special case: "o" field may include "$v" in mongo-3.6 which is not support in mgo.v2 library
@@ -454,7 +455,7 @@ func (sw *SingleWriter) doInsert(database, collection string, metadata bson.M, o
 	collectionHandle := sw.session.DB(database).C(collection)
 	var upserts []*OplogRecord
 	var errMsgs []string
-	var idc int64 = time.Now().UnixNano() - 1544081032000000000
+	var idc string = strconv.FormatInt(time.Now().UnixNano(), 16)
 	for _, log := range oplogs {
 		oFiled := log.original.partialLog.Object
 		oFiled[idcExists] = idc
@@ -492,7 +493,7 @@ func (sw *SingleWriter) doUpdateOnInsert(database, collection string, metadata b
 		data interface{}
 	}
 	var updates []*pair
-	var idc int64 = time.Now().UnixNano() - 1544081032000000000
+	var idc string = strconv.FormatInt(time.Now().UnixNano(), 16)
 	for _, log := range oplogs {
 		// insert must have _id
 		if id, exist := log.original.partialLog.Object["_id"]; exist {
@@ -534,7 +535,7 @@ func (sw *SingleWriter) doUpdate(database, collection string, metadata bson.M,
 	oplogs []*OplogRecord, upsert bool) error {
 	collectionHandle := sw.session.DB(database).C(collection)
 	var errMsgs []string
-	var idc int64 = time.Now().UnixNano() - 1544081032000000000
+	var idc string = strconv.FormatInt(time.Now().UnixNano(), 16)
 	if upsert {
 		for _, log := range oplogs {
 			oFiled := log.original.partialLog.Object
@@ -678,7 +679,7 @@ func (sw *SingleWriter) applyOps(database, operation string, log *oplog.PartialL
 }
 
 func HandleDuplicated(collection *mgo.Collection, records []*OplogRecord, op int8) {
-	var idc int64 = time.Now().UnixNano() - 1544081032000000000
+	var idc string = strconv.FormatInt(time.Now().UnixNano(), 16)
 	for _, record := range records {
 		log := record.original.partialLog
 		switch conf.Options.ReplayerConflictWriteTo {
