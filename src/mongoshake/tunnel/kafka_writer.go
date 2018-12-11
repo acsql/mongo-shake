@@ -50,6 +50,7 @@ func (tunnel *KafkaWriter) Send(message *WMessage) int64 {
 	}
 
 	err := tunnel.writer.SimpleWrite(byteBuffer.Bytes())
+	// err := tunnel.writer.SimpleWrite(byteBuffer.Bytes(), message.ParsedLogs[0].Namespace)
 
 	if err != nil {
 		return ReplyError
