@@ -47,6 +47,20 @@ func (s *SyncWriter) SimpleWrite(input []byte) error {
 	return s.send(input)
 }
 
+//func stringHashValue(s string, mod int) int32 {
+	//var hashValue int32
+	//for _, c := range s {
+		//hashValue = 31*hashValue + int32(c)
+	//}
+	//if hashValue < 0 {
+		//return -hashValue
+	//}
+
+	//return hashValue % int32(mod)
+//}
+// producer 按namespace 并行
+// // Partition: stringHashValue(namespace, 4),
+
 func (s *SyncWriter) send(input []byte) error {
 	// use timestamp as key
 	key := strconv.FormatInt(time.Now().UnixNano(), 16)
