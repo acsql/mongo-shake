@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	idcXXX = "IDC_XXX"
+	idcExists = "_IdcExists"
 )
 
 var NsShouldBeIgnore = [...]string{
@@ -80,10 +80,10 @@ func (filter *IdcFilter) Filter(log *oplog.PartialLog) bool {
 	var oSet bson.M
 	oSet, exists := oFiled["$set"].(bson.M)
 	if exists {
-		_, idcexists := oSet[idcXXX]
+		_, idcexists := oSet[idcExists]
 		return idcexists
 	} else {
-		_, idcexists := oFiled[idcXXX]
+		_, idcexists := oFiled[idcExists]
 		return idcexists
 	}
 	return false
