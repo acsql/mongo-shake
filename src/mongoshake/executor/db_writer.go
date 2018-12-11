@@ -16,7 +16,7 @@ import (
 
 const (
 	verisonMark = "$v"
-	idcXXX      = "IDC_XXX"
+	idcExists   = "_IdcExists"
 )
 
 type BasicWriter interface {
@@ -55,13 +55,30 @@ type CommandWriter struct {
 	session *mgo.Session
 }
 
+//func setIdcTag(log bson.M, op string) {
+//	var idc int64 = time.Now().UnixNano() - 1544081032000000000
+//	switch op {
+//	case "i":
+//		log[idcExists] = idc
+//	case "u":
+//		oSet, exists := log["$set"].(bson.M)
+//		if exists {
+//			oSet[idcExists] = idc
+//		} else {
+//			log[idcExists] = idc
+//		}
+//	default:
+//		LOG.Warn("Other type oplogs found. op '%s'", op)
+//	}
+//}
+
 func (cw *CommandWriter) doInsert(database, collection string, metadata bson.M, oplogs []*OplogRecord,
 	dupUpdate bool) error {
 	var inserts []bson.M
 	var idc int64 = time.Now().UnixNano() - 1544081032000000000
 	for _, log := range oplogs {
 		oFiled := log.original.partialLog.Object
-		oFiled[idcXXX] = idc
+		oFiled[idcExists] = idc
 		inserts = append(inserts, oFiled)
 	}
 	dbHandle := cw.session.DB(database)
@@ -98,7 +115,7 @@ func (cw *CommandWriter) doUpdateOnInsert(database, collection string, metadata 
 		// insert must have _id
 		if id, exist := log.original.partialLog.Object["_id"]; exist {
 			oFiled := log.original.partialLog.Object
-			oFiled[idcXXX] = idc
+			oFiled[idcExists] = idc
 			updates = append(updates, bson.M{
 				"q":      bson.M{"_id": id},
 				"u":      oFiled,
@@ -142,9 +159,9 @@ func (cw *CommandWriter) doUpdate(database, collection string, metadata bson.M,
 		var oSet bson.M
 		oSet, exists := oFiled["$set"].(bson.M)
 		if exists {
-			oSet[idcXXX] = idc
+			oSet[idcExists] = idc
 		} else {
-			oFiled[idcXXX] = idc
+			oFiled[idcExists] = idc
 		}
 		updates = append(updates, bson.M{
 			"q":      log.original.partialLog.Query,
@@ -259,7 +276,7 @@ func (bw *BulkWriter) doInsert(database, collection string, metadata bson.M, opl
 	var idc int64 = time.Now().UnixNano() - 1544081032000000000
 	for _, log := range oplogs {
 		oFiled := log.original.partialLog.Object
-		oFiled[idcXXX] = idc
+		oFiled[idcExists] = idc
 		inserts = append(inserts, oFiled)
 	}
 	// collectionHandle := bw.session.DB(database).C(collection)
@@ -290,7 +307,7 @@ func (bw *BulkWriter) doUpdateOnInsert(database, collection string, metadata bso
 		// insert must have _id
 		if id, exist := log.original.partialLog.Object["_id"]; exist {
 			oFiled := log.original.partialLog.Object
-			oFiled[idcXXX] = idc
+			oFiled[idcExists] = idc
 			// updates = append(updates, &pair{id: id, data: log.original.partialLog.Object})
 			update = append(update, bson.M{"_id": id}, oFiled)
 		} else {
@@ -327,9 +344,9 @@ func (bw *BulkWriter) doUpdate(database, collection string, metadata bson.M,
 		var oSet bson.M
 		oSet, exists := oFiled["$set"].(bson.M)
 		if exists {
-			oSet[idcXXX] = idc
+			oSet[idcExists] = idc
 		} else {
-			oFiled[idcXXX] = idc
+			oFiled[idcExists] = idc
 		}
 		update = append(update, log.original.partialLog.Query, oFiled)
 	}
@@ -440,7 +457,7 @@ func (sw *SingleWriter) doInsert(database, collection string, metadata bson.M, o
 	var idc int64 = time.Now().UnixNano() - 1544081032000000000
 	for _, log := range oplogs {
 		oFiled := log.original.partialLog.Object
-		oFiled[idcXXX] = idc
+		oFiled[idcExists] = idc
 		if err := collectionHandle.Insert(oFiled); err != nil {
 			if mgo.IsDup(err) {
 				upserts = append(upserts, log)
@@ -480,7 +497,7 @@ func (sw *SingleWriter) doUpdateOnInsert(database, collection string, metadata b
 		// insert must have _id
 		if id, exist := log.original.partialLog.Object["_id"]; exist {
 			oFiled := log.original.partialLog.Object
-			oFiled[idcXXX] = idc
+			oFiled[idcExists] = idc
 			updates = append(updates, &pair{id: id, data: oFiled})
 		} else {
 			LOG.Warn("Insert on duplicated update _id look up failed. %v", log)
@@ -528,9 +545,9 @@ func (sw *SingleWriter) doUpdate(database, collection string, metadata bson.M,
 			var oSet bson.M
 			oSet, exists := oFiled["$set"].(bson.M)
 			if exists {
-				oSet[idcXXX] = idc
+				oSet[idcExists] = idc
 			} else {
-				oFiled[idcXXX] = idc
+				oFiled[idcExists] = idc
 			}
 			_, err := collectionHandle.Upsert(log.original.partialLog.Query, oFiled)
 			if err != nil {
@@ -553,9 +570,9 @@ func (sw *SingleWriter) doUpdate(database, collection string, metadata bson.M,
 			var oSet bson.M
 			oSet, exists := oFiled["$set"].(bson.M)
 			if exists {
-				oSet[idcXXX] = idc
+				oSet[idcExists] = idc
 			} else {
-				oFiled[idcXXX] = idc
+				oFiled[idcExists] = idc
 			}
 			err := collectionHandle.Update(log.original.partialLog.Query, oFiled)
 			if err != nil {
@@ -669,7 +686,7 @@ func HandleDuplicated(collection *mgo.Collection, records []*OplogRecord, op int
 			// general process : write record to specific database
 			session := collection.Database.Session
 			oFiled := log.Object
-			oFiled[idcXXX] = idc
+			oFiled[idcExists] = idc
 			// discard conflict again
 			session.DB(utils.APPConflictDatabase).C(collection.Name).Insert(oFiled)
 		case DumpConflictToSDK, NoDumpConflict:
