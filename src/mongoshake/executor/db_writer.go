@@ -158,11 +158,17 @@ func (cw *CommandWriter) doUpdate(database, collection string, metadata bson.M,
 			delete(oFiled, verisonMark)
 		}
 		var oSet bson.M
+		// {$set:{"2":111}}
+		// {$unset:{"1":true}}
+		// {$unset:{"1":true},$set:{"2":111}}
 		oSet, exists := oFiled["$set"].(bson.M)
 		if exists {
 			oSet[idcExists] = idc
 		} else {
-			oFiled[idcExists] = idc
+			_, exists := oFiled["$unset"].(bson.M)
+			if !exists {
+				oFiled[idcExists] = idc
+			}
 		}
 		updates = append(updates, bson.M{
 			"q":      log.original.partialLog.Query,
@@ -347,7 +353,10 @@ func (bw *BulkWriter) doUpdate(database, collection string, metadata bson.M,
 		if exists {
 			oSet[idcExists] = idc
 		} else {
-			oFiled[idcExists] = idc
+			_, exists := oFiled["$unset"].(bson.M)
+			if !exists {
+				oFiled[idcExists] = idc
+			}
 		}
 		update = append(update, log.original.partialLog.Query, oFiled)
 	}
@@ -548,7 +557,10 @@ func (sw *SingleWriter) doUpdate(database, collection string, metadata bson.M,
 			if exists {
 				oSet[idcExists] = idc
 			} else {
-				oFiled[idcExists] = idc
+				_, exists := oFiled["$unset"].(bson.M)
+				if !exists {
+					oFiled[idcExists] = idc
+				}
 			}
 			_, err := collectionHandle.Upsert(log.original.partialLog.Query, oFiled)
 			if err != nil {
@@ -573,7 +585,10 @@ func (sw *SingleWriter) doUpdate(database, collection string, metadata bson.M,
 			if exists {
 				oSet[idcExists] = idc
 			} else {
-				oFiled[idcExists] = idc
+				_, exists := oFiled["$unset"].(bson.M)
+				if !exists {
+					oFiled[idcExists] = idc
+				}
 			}
 			err := collectionHandle.Update(log.original.partialLog.Query, oFiled)
 			if err != nil {
